@@ -1,0 +1,24 @@
+{
+  "name": "node-tl1-fiberhome",
+  "version": "0.0.1",
+  "description": "integration module for fiberhome TL1 communication interface",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/felipebergamin/node-tl1-fiberhome.git"
+  },
+  "keywords": [
+    "node",
+    "tl1",
+    "fiberhome"
+  ],
+  "author": "Felipe Bergamin <felipebergamin6@gmail.com>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/felipebergamin/node-tl1-fiberhome/issues"
+  },
+  "homepage": "https://github.com/felipebergamin/node-tl1-fiberhome#readme"
+}

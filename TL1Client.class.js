@@ -1,3 +1,5 @@
+'use strict';
+
 const parser = require('./ResponseParser');
 const s = require('net').Socket();
 

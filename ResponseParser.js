@@ -1,3 +1,5 @@
+'use strict';
+
 const mergeAttribsAndValues = (attribs, data_rows)=>{
     const merged = [];
 

@@ -8,7 +8,7 @@ class TL1Client {
     constructor (ip, port, onConnect) {
         onConnect = onConnect || (()=>console.log("Conectado ao TL1"));
         s.setNoDelay(true);
-        s.connect(3337, '172.16.255.6', onConnect);
+        s.connect(port, ip, onConnect);
     }
 
     execute (cmd) {

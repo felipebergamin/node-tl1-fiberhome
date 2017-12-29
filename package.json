@@ -1,6 +1,6 @@
 {
   "name": "node-tl1-fiberhome",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "integration module for fiberhome TL1 communication interface",
   "main": "./dist/app.js",
   "types": "./dist/app.d.ts",

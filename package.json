@@ -2,9 +2,12 @@
   "name": "node-tl1-fiberhome",
   "version": "0.0.3",
   "description": "integration module for fiberhome TL1 communication interface",
-  "main": "app.js",
+  "main": "./dist/app.js",
+  "types": "./dist/app.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf ./dist && tslint --project . && tsc",
+    "prepublishOnly": "rm -rf ./dist && tslint --project && tsc"
   },
   "repository": {
     "type": "git",
@@ -20,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/felipebergamin/node-tl1-fiberhome/issues"
   },
-  "homepage": "https://github.com/felipebergamin/node-tl1-fiberhome#readme"
+  "homepage": "https://github.com/felipebergamin/node-tl1-fiberhome#readme",
+  "devDependencies": {
+    "@types/node": "^8.5.2"
+  }
 }

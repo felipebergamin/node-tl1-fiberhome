@@ -1,0 +1,30 @@
+export interface IConfigureWanParams {
+  ONUIP?: string;
+  OLTID?: string;
+  PONID?: string;
+  ONUIDTYPE?: string;
+  ONUID?: string;
+  STATUS?: number;
+  MODE?: number;
+  CONNTYPE?: number;
+  VLAN?: number;
+  COS?: number;
+  QOS?: number;
+  NAT?: number;
+  IPMODE?: number;
+  WANIP?: string;
+  WANMASK?: string;
+  WANGATEWAY?: string;
+  MASTERDNS?: string;
+  SLAVEDNS?: string;
+  PPPOEPROXY?: number;
+  PPPOEUSER?: string;
+  PPPOEPASSWD?: string;
+  PPPOENAME?: string;
+  PPPOEMODE?: number;
+  UPORT?: number;
+  SSID?: number;
+  WANSVC?: number;
+  UPPROFILENAME?: string;
+  DOWNPROFILENAME?: string;
+}

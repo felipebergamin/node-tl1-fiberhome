@@ -63,6 +63,15 @@ export class TL1Client {
     return { responseString, parsedResponse };
   }
 
+  public async handShake(ctag: string = "HNDSHK"): Promise<IResponse<IOperationCommandFormat>> {
+    const query = `SHAKEHAND:::${ctag}::;`;
+    const response = await this.execute(query);
+    const responseString = response.toString();
+    const parsedResponse = parser.operationCommand(responseString);
+
+    return { responseString, parsedResponse };
+  }
+
   public async lstOpticalModuleDDM(params: IListOpticalModuleDDMParams, ctag?: string)
     : Promise<IResponse<IQueryCommandFormat<IListOMDDMResponse>>> {
 

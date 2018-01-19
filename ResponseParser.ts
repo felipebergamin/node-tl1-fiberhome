@@ -20,14 +20,29 @@ const mergeAttribsAndValues = (attribs: any[], DataRows: any[]) => {
   return merged;
 };
 
+export const matchDenyResponse = (response: string): boolean => {
+  const regexStr =
+    // header
+    "[\\r\\n]*\\s{3}(.{0,})+\\s(\\d{4})-(\\d{2})-(\\d{2})\\s(\\d{2}):(\\d{2}):(\\d{2})" +
+    // response_id
+    "\\r\\nM\\s{2}(\\w{0,})+\\s(DENY)" +
+    // response_block
+    "\\r\\n\\s{3}EN=(.+)\\s{3}ENDESC=([\\w\\s=]+)" +
+    // terminator
+    "\\r\\n(;|>)";
+
+  const regex = new RegExp(regexStr);
+  return regex.test(response);
+};
+
 export const operationCommand = (response: any): IOperationCommandFormat => {
   const regexStr =
     // header
-    "[\\r\\n]*\\s{3}(.{1,})\\s(\\d{4})-(\\d{2})-(\\d{2})\\s(\\d{2}):(\\d{2}):(\\d{2})" +
+    "[\\r\\n]*\\s{3}(.{0,})\\s(\\d{4})-(\\d{2})-(\\d{2})\\s(\\d{2}):(\\d{2}):(\\d{2})" +
     // response_id
-    "\\r\\nM\\s{2}(\\w{1,})\\s(COMPLD|DELAY|DENY|PRTLRTRV)" +
+    "\\r\\nM\\s{2}(\\w{0,})+\\s(COMPLD|DELAY|DENY|PRTLRTRV)" +
     // response_block
-    "\\r\\n\\s{3}EN=(.+)\\s{3}ENDESC=([\\w\\s=]+)" +
+    "\\r\\n\\s{3}EN=(.+)\\s{3}ENDESC=(.+)" +
     // terminator
     "\\r\\n(;|>)";
   const regex = new RegExp(regexStr);

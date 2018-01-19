@@ -15,34 +15,57 @@ import { IResponse } from "./interfaces/IResponse";
 
 export class TL1Client {
   private s: Socket;
+  private ip: string;
+  private port: number;
 
-  constructor(ip: string, port: number, onConnect?: () => void) {
-    onConnect = onConnect || (() => "connected");
+  constructor(ip: string, port?: number) {
+    this.ip = ip;
+    this.port = port || 3337;
     this.s = new Socket();
-    this.s.setNoDelay(true);
-    this.s.connect(port, ip, onConnect);
+  }
+
+  get socket() {
+    return this.s;
+  }
+
+  public connect(): Promise<any> {
+    return new Promise((resolve: () => void, reject: (err: Error) => void) => {
+      const onError = (err: Error) => {
+        this.s.destroy();
+        reject(err);
+      };
+
+      const onConnect = () => {
+        this.s.removeListener("error", onError);
+        resolve();
+      };
+
+      this.s.once("error", onError);
+      this.s.connect(this.port, this.ip, onConnect);
+    });
   }
 
   public execute(cmd: string): Promise<any> {
     return new Promise((resolve: (val: any) => void, reject: (err: any) => void) => {
-      this.s.once("data", (data: any) => {
+      const onData = (data: any) => {
         resolve(data);
-      });
+        this.s.removeListener("error", onError);
+      };
 
-      this.s.once("error", (err: any) => {
+      const onError = (err: Error) => {
         reject(err);
-      });
+      };
 
+      this.s.once("error", onError);
+      this.s.once("data", onData);
       this.s.write(cmd);
     });
   }
 
-  public async login(user: string, passwd: string, ctag?: string)
+  public async login(user: string, passwd: string, ctag: string = "LGN")
     : Promise<{responseString: string, parsedResponse: IOperationCommandFormat}> {
 
-    ctag = ctag || "LGN";
     const query = `LOGIN:::${ctag}::UN=${user},PWD=${passwd};`;
-
     const response = await this.execute(query);
     const responseString = response.toString();
     const parsedResponse = parser.operationCommand(responseString);
@@ -50,12 +73,10 @@ export class TL1Client {
     return { responseString, parsedResponse };
   }
 
-  public async logout(ctag?: string)
+  public async logout(ctag: string = "LGT")
     : Promise<IResponse<IOperationCommandFormat>> {
 
-    ctag = ctag || "LGT";
     const query = `LOGOUT:::${ctag}::;`;
-
     const response = await this.execute(query);
     const responseString = response.toString();
     const parsedResponse = parser.operationCommand(responseString);
@@ -72,43 +93,57 @@ export class TL1Client {
     return { responseString, parsedResponse };
   }
 
-  public async lstOpticalModuleDDM(params: IListOpticalModuleDDMParams, ctag?: string)
+  public async lstOpticalModuleDDM(params: IListOpticalModuleDDMParams, ctag: string = "LSTD")
     : Promise<IResponse<IQueryCommandFormat<IListOMDDMResponse>>> {
 
     const targetIdAcceptParams = [
       "ONUIP", "OLTID", "PONID", "ONUIDTYPE", "ONUID", "PORTID", "PEERFLAG",
     ];
     const targetIdentifier = this.processParams(targetIdAcceptParams, params);
-    ctag = ctag || "LSTD";
 
     const query = `LST-OMDDM::${targetIdentifier}:${ctag}::;`;
+    let responseString: string = "";
 
-    const response = await this.execute(query);
+    try {
+      const response = await this.execute(query);
 
-    const responseString = response.toString();
-    const parsedResponse = parser.queryCommand<IListOMDDMResponse>(responseString);
+      responseString = response.toString();
+      const parsedResponse = parser.queryCommand<IListOMDDMResponse>(responseString);
 
-    return { responseString, parsedResponse };
+      return { responseString, parsedResponse };
+    } catch (err) {
+      if (parser.matchDenyResponse(responseString)) {
+        throw parser.operationCommand(responseString);
+      }
+      throw err;
+    }
   }
 
-  public async lstUnregisteredOnu(params: IListUnregOnuParams, ctag?: string)
+  public async lstUnregisteredOnu(params: IListUnregOnuParams, ctag: string = "LSTUN")
     : Promise<IResponse<IQueryCommandFormat<ILstUnregOnuResponse>>> {
 
     const acceptParams = ["OLTID", "PONID"];
     const targetIdentifier = this.processParams(acceptParams, params);
-    ctag = ctag || "LSTUN";
 
     const query = `LST-UNREGONU::${targetIdentifier}:${ctag}::;`;
+    let responseString: string = "";
 
-    const response = await this.execute(query);
+    try {
+      const response = await this.execute(query);
 
-    const responseString = response.toString();
-    const parsedResponse = parser.queryCommand<ILstUnregOnuResponse>(responseString);
+      responseString = response.toString();
+      const parsedResponse = parser.queryCommand<ILstUnregOnuResponse>(responseString);
 
-    return { responseString, parsedResponse };
+      return { responseString, parsedResponse };
+    } catch (err) {
+      if (parser.matchDenyResponse(responseString)) {
+        throw parser.operationCommand(responseString);
+      }
+      throw err;
+    }
   }
 
-  public async addOnu(params: IAddOnuParams, ctag: string = "ADDO")
+  public async addOnu(params: IAddOnuParams, ctag: string = "ADDONU")
     : Promise<IResponse<IOperationCommandFormat>> {
 
     const targetIdAcceptParams = [
@@ -130,7 +165,7 @@ export class TL1Client {
     return { responseString, parsedResponse };
   }
 
-  public async deleteOnu(params: IDelOnuParams, ctag?: string)
+  public async deleteOnu(params: IDelOnuParams, ctag: string = "DELONU")
     : Promise<IResponse<IOperationCommandFormat>> {
 
     const targetIdAcceptParams = [
@@ -142,7 +177,6 @@ export class TL1Client {
 
     const targetIdentifier = this.processParams(targetIdAcceptParams, params);
     const datablocks = this.processParams(datablocksAcceptParams, params);
-    ctag = ctag || "SLA";
 
     const query = `DEL-ONU::${targetIdentifier}:${ctag}::${datablocks};`;
 
@@ -153,7 +187,7 @@ export class TL1Client {
     return { responseString, parsedResponse };
   }
 
-  public async configureWanConnection(params: IConfigureWanParams, ctag?: string)
+  public async configureWanConnection(params: IConfigureWanParams, ctag: string = "CFGWAN")
     : Promise<IResponse<IOperationCommandFormat>> {
 
     const targetIdAcceptParams = [
@@ -168,7 +202,6 @@ export class TL1Client {
 
     const targetIdentifier = this.processParams(targetIdAcceptParams, params);
     const datablocks = this.processParams(datablocksAcceptParams, params);
-    ctag = ctag || "SLA";
 
     const query = `SET-WANSERVICE::${targetIdentifier}:${ctag}::${datablocks};`;
     const response = await this.execute(query);

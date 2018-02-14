@@ -1,4 +1,7 @@
+import Debug = require("debug");
 import { Socket } from "net";
+
+import { TimeoutError } from "./errors/TimeoutError";
 import parser = require("./ResponseParser");
 
 import { IAddOnuParams } from "./interfaces/IAddOnuParams";
@@ -13,15 +16,19 @@ import { IOperationCommandFormat } from "./interfaces/IOperationCommandFormat";
 import { IQueryCommandFormat } from "./interfaces/IQueryCommandFormat";
 import { IResponse } from "./interfaces/IResponse";
 
+const debug = Debug("node-tl1-fiberhome");
+
 export class TL1Client {
   private s: Socket;
   private ip: string;
   private port: number;
 
-  constructor(ip: string, port?: number) {
+  constructor(ip: string, port: number = 3337) {
+    debug(`constructor ip ${ip} port ${port}`);
     this.ip = ip;
-    this.port = port || 3337;
+    this.port = port;
     this.s = new Socket();
+    this.s.setTimeout(5000);
   }
 
   get socket() {
@@ -29,6 +36,7 @@ export class TL1Client {
   }
 
   public connect(): Promise<any> {
+    debug("connect()");
     return new Promise((resolve: () => void, reject: (err: Error) => void) => {
       const onError = (err: Error) => {
         this.s.destroy();
@@ -46,25 +54,37 @@ export class TL1Client {
   }
 
   public execute(cmd: string): Promise<any> {
-    return new Promise((resolve: (val: any) => void, reject: (err: any) => void) => {
-      const onData = (data: any) => {
-        resolve(data);
-        this.s.removeListener("error", onError);
-      };
+    debug("execute()");
 
+    return new Promise((resolve: (val: any) => void, reject: (err: any) => void) => {
       const onError = (err: Error) => {
+        debug(`error: ${err.name} - ${err.message}`);
+        this.socket.removeAllListeners("data");
+        this.socket.removeAllListeners("timeout");
         reject(err);
       };
 
+      const onTimeout = () => onError(new TimeoutError());
+
+      const onData = (data: any) => {
+        debug("data received");
+        this.socket.removeListener("error", onError);
+        this.socket.removeListener("timeout", onTimeout);
+        resolve(data);
+      };
+
       this.s.once("error", onError);
+      this.s.once("timeout", onTimeout);
       this.s.once("data", onData);
+
+      debug("write command");
       this.s.write(cmd);
     });
   }
 
   public async login(user: string, passwd: string, ctag: string = "LGN")
-    : Promise<{responseString: string, parsedResponse: IOperationCommandFormat}> {
-
+    : Promise<{ responseString: string, parsedResponse: IOperationCommandFormat }> {
+    debug("login()");
     const query = `LOGIN:::${ctag}::UN=${user},PWD=${passwd};`;
     const response = await this.execute(query);
     const responseString = response.toString();
@@ -75,7 +95,7 @@ export class TL1Client {
 
   public async logout(ctag: string = "LGT")
     : Promise<IResponse<IOperationCommandFormat>> {
-
+    debug("logout()");
     const query = `LOGOUT:::${ctag}::;`;
     const response = await this.execute(query);
     const responseString = response.toString();
@@ -85,6 +105,7 @@ export class TL1Client {
   }
 
   public async handShake(ctag: string = "HNDSHK"): Promise<IResponse<IOperationCommandFormat>> {
+    debug("handshake()");
     const query = `SHAKEHAND:::${ctag}::;`;
     const response = await this.execute(query);
     const responseString = response.toString();
@@ -234,6 +255,7 @@ export class TL1Client {
 
   public end() {
     this.s.end();
+    this.s.destroy();
   }
 
   private processParams(acceptParams: any[], receivedParams: any): string {
